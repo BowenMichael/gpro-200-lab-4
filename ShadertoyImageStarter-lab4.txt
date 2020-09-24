@@ -1,4 +1,5 @@
 // GLSL STARTER CODE BY DANIEL S. BUCKSTEIN
+
 // asPoint: promote a 3D vector into a 4D vector representing a point (w=1)
 //    point: input 3D vector
 vec4 asPoint(in vec3 point)
@@ -60,23 +61,6 @@ void calcRay(out vec4 rayDirection, out vec4 rayOrigin,
     rayDirection = asOffset(viewport - eyePosition);
 }
 
-struct sSphere
-{
-	float radius;
-    vec4 center;
-};
-
-float lenSq(vec2 x){
-    return dot(x,x);
-}
-    
-void initSphere (out sSphere sphere, in vec3 center, in float radius) 
-{
-	sphere.center = asPoint(center);
-    sphere.radius = radius;
-
-}
-
 // calcColor: calculate the color of a pixel given a ray
 //    rayDirection: input ray direction
 //    rayOrigin:    input ray origin
@@ -86,27 +70,7 @@ vec4 calcColor(in vec4 rayDirection, in vec4 rayOrigin)
     //  -> what does the ray look like as color?
     //return rayDirection;
 	
-    //Scene
-    sSphere sphere;
-    initSphere(sphere, vec3(0.0, 0.0, -4.0), .5);
-    
-    vec3 dp;
-    dp.xy = rayDirection.xy - sphere.center.xy; //ray from pixel toward the center of the circle
-    float lSq = lenSq(dp.xy), 
-          rSq = sphere.radius * sphere.radius;
-    
-    if(lSq <= rSq){ //if the length of that ray DP^2 is smaller than the radius^2 then it draws the circle. Squared for efficency
-    	//inside the circle XY
-        //return vec4(1.0);
-        
-        dp.z = rSq - ((dp.x*dp.x)+(dp.y*dp.y));
-        vec3 position = sphere.center.xyz + vec3(dp.x, dp.y, sqrt(dp.z));
-        vec3 normal = (position - sphere.center.xyz) / sphere.radius;
-        return vec4(normal * 0.5 + 0.5, 1.0);
-    }
-    
 	// BACKGROUND
-    return vec4(.5);
 	const vec3 warm = vec3(0.8, 0.4, 0.2), cool = vec3(0.2, 0.4, 0.8);
 	return vec4(mix(warm, cool, rayDirection.y), 1.0);
 }
