@@ -1,3 +1,12 @@
+//Utilitiy functions
+float lenSq(vec2 x){
+    return dot(x,x);
+}
+
+float squareValue(float x){
+	return x*x;
+}
+
 // GLSL STARTER CODE BY DANIEL S. BUCKSTEIN
 // asPoint: promote a 3D vector into a 4D vector representing a point (w=1)
 //    point: input 3D vector
@@ -12,6 +21,39 @@ vec4 asOffset(in vec3 offset)
 {
     return vec4(offset, 0.0);
 }
+
+//Structs and their init functions
+
+struct sSphere
+{
+	float radius;
+    vec4 center;
+};
+
+void initSphere (out sSphere sphere, in vec3 center, in float radius) 
+{
+	sphere.center = asPoint(center);
+    sphere.radius = radius;
+
+}
+
+struct pLight
+{
+	vec4 center;
+    vec4 color;
+    float intensity;
+};
+
+void initPointLight(out pLight light, in vec3 center, in vec4 color, in float intensity)
+{
+  	light.center = asPoint(center);
+    light.color = color;
+    light.intensity = intensity;
+    
+}
+    
+
+//Agorithmic functions
 
 // calcViewport: calculate the viewing plane (viewport) coordinate
 //    viewport:       output viewing plane coordinate
@@ -60,22 +102,7 @@ void calcRay(out vec4 rayDirection, out vec4 rayOrigin,
     rayDirection = asOffset(viewport - eyePosition);
 }
 
-struct sSphere
-{
-	float radius;
-    vec4 center;
-};
-
-float lenSq(vec2 x){
-    return dot(x,x);
-}
     
-void initSphere (out sSphere sphere, in vec3 center, in float radius) 
-{
-	sphere.center = asPoint(center);
-    sphere.radius = radius;
-
-}
 
 // calcColor: calculate the color of a pixel given a ray
 //    rayDirection: input ray direction
@@ -89,20 +116,40 @@ vec4 calcColor(in vec4 rayDirection, in vec4 rayOrigin)
     //Scene
     sSphere sphere;
     initSphere(sphere, vec3(0.0, 0.0, -4.0), .5);
+   	
+    pLight pointLight;
+    initPointLight(pointLight, vec3(cos(iTime),  cos(iTime), -3.5 + sin(iTime)), vec4(1.0), 10.0); //
+    
     
     vec3 dp;
     dp.xy = rayDirection.xy - sphere.center.xy; //ray from pixel toward the center of the circle
-    float lSq = lenSq(dp.xy), 
-          rSq = sphere.radius * sphere.radius;
+    float lSq = lenSq(dp.xy), //the length function calulates the square length so it is more efficent just square it
+          rSq = squareValue(sphere.radius); 
+
     
     if(lSq <= rSq){ //if the length of that ray DP^2 is smaller than the radius^2 then it draws the circle. Squared for efficency
     	//inside the circle XY
         //return vec4(1.0);
         
+        //Render sphere
         dp.z = rSq - ((dp.x*dp.x)+(dp.y*dp.y));
         vec3 position = sphere.center.xyz + vec3(dp.x, dp.y, sqrt(dp.z));
         vec3 normal = (position - sphere.center.xyz) / sphere.radius;
-        return vec4(normal * 0.5 + 0.5, 1.0);
+       
+        
+        //point lighting
+        //vec4 reflectionColor = vec4(normal * 0.5 + 0.5, 1.0);
+        vec4 reflectionColor = vec4(1.0);
+        
+        vec3 lightVector = pointLight.center.xyz - position;
+        float lightVectorLength = length(lightVector);
+        vec3 normalizedLightVector = lightVector/lightVectorLength;
+        float diffusionCoefficent = max(0.0, (dot(normal, normalizedLightVector)));
+        float attenuation = 1.0/ (1.0 + lightVectorLength/pointLight.intensity + squareValue(lightVectorLength)/squareValue(pointLight.intensity));
+        pointLight.intensity = diffusionCoefficent * attenuation;
+
+        vec4 finalColor = pointLight.intensity * reflectionColor * pointLight.color;
+        return finalColor;
     }
     
 	// BACKGROUND
